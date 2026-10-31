@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Backlog Ledger</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
 :root{
   --bg:#241934; --bg2:#2f2044; --panel:#2b1e3f;
@@ -17,25 +16,17 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
   box-sizing:border-box;
 }
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){
-    --bg:#F4EFE6; --bg2:#ffffff; --panel:#ffffff;
-    --gold:#c98a2c; --gold-dim:#a8721f;
-    --ink:#241934; --ink-dim:#5c4d73;
-    --line:#ddd0e8;
-  }
-}
-:root[data-theme="dark"]{ --bg:#241934; --bg2:#2f2044; --panel:#2b1e3f; --ink:#F1E9F9; --ink-dim:#b6a6cf; --line:#4a3768; }
+
 *{box-sizing:border-box}
 html{scroll-padding-top: env(safe-area-inset-top, 0px);}
 body{
   margin:0; background:var(--bg); color:var(--ink);
-  font-family:'Space Mono',monospace;
+  font-family:system-ui,sans-serif;
   min-height:100%;
 }
 .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 60px;}
 h1{
-  font-family:'Fraunces',serif; font-weight:700; font-size:clamp(28px,5vw,42px);
+  font-family:system-ui,sans-serif; font-weight:700; font-size:clamp(28px,5vw,42px);
   margin:0 0 4px; letter-spacing:-0.01em;
 }
 .sub{color:var(--ink-dim); margin:0 0 28px; font-size:14px;}
@@ -45,10 +36,10 @@ h1{
   border-radius:4px; overflow:hidden;
 }
 .stat{background:var(--panel); padding:14px 16px;}
-.stat .n{font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--gold); line-height:1.1;}
+.stat .n{font-family:system-ui,sans-serif; font-size:26px; font-weight:700; color:var(--gold); line-height:1.1;}
 .stat .l{font-size:11px; color:var(--ink-dim); margin-top:4px;}
 .panel{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px; margin-bottom:20px;}
-.panel h2{font-family:'Fraunces',serif; font-size:18px; margin:0 0 4px; font-weight:700;}
+.panel h2{font-family:system-ui,sans-serif; font-size:18px; margin:0 0 4px; font-weight:700;}
 .panel .hint{color:var(--ink-dim); font-size:12px; margin:0 0 14px;}
 form{display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr auto; gap:8px; align-items:end;}
 .field{display:flex; flex-direction:column; gap:4px; min-width:0;}
@@ -60,7 +51,7 @@ input,select{
 input:focus,select:focus{outline:2px solid var(--gold); outline-offset:1px;}
 button{
   background:var(--gold); color:#241934; border:none; padding:9px 16px;
-  border-radius:4px; font-family:'Space Mono',monospace; font-weight:700; font-size:13px;
+  border-radius:4px; font-family:system-ui,sans-serif; font-weight:700; font-size:13px;
   cursor:pointer; white-space:nowrap;
 }
 button:hover{background:var(--gold-dim);}
@@ -106,10 +97,18 @@ tr.editing input, tr.editing select{padding:6px; font-size:12px;}
   .listcols{grid-template-columns:1fr;}
 }
 </style>
-</head>
+<style id="kart38-unified-theme">
+:root,:root[data-theme="dark"]{color-scheme:dark;--bg:#101413;--bg2:#202821;--panel:#191f1c;--card:#191f1c;--ink:#f2f4ed;--ink-dim:#adb7ae;--mute:#adb7ae;--text:#f2f4ed;--muted:#adb7ae;--line:#323c34;--acc:#c8f36b;--accent:#c8f36b;--gold:#c8f36b;--gold-dim:#a9d44f;--ok:#8bd5a4;--okb:#1c3427;--warn:#f0c15a;--warnb:#352c17;--unk:#adb7ae;--unkb:#26302a}
+html{color-scheme:dark}body{background:#101413;color:#f2f4ed;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}
+.kart38-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1100px;margin:0 auto;padding:20px 20px;border-bottom:1px solid #323c34}
+.kart38-nav a{text-decoration:none!important}.kart38-brand{font-size:20px;font-weight:850;letter-spacing:-.7px;color:#f2f4ed!important}.kart38-brand span{color:#c8f36b}.kart38-back{font-size:13px;color:#c8f36b!important;font-weight:650}
+.kart38-nav a:focus-visible{outline:2px solid #c8f36b;outline-offset:5px}
+button,input,select,textarea{font-family:inherit}button{cursor:pointer}
+@media(max-width:540px){.kart38-nav{padding:16px 18px}}
+</style><style>.wrap{max-width:1100px}.panel{border-radius:14px}.stats{border-radius:12px;gap:8px;background:transparent;border:0}.stat{border:1px solid #323c34;border-radius:12px}.stat .n{color:#c8f36b}h1{font-size:clamp(32px,6vw,52px);letter-spacing:-.04em}button{border-radius:9px}input,select{border-radius:9px}.panel h2{font-weight:700}</style></head>
 <body>
-<div class="wrap">
-  <a href="/" style="display:inline-block;margin-bottom:18px;color:var(--gold);text-decoration:none;font-size:12px">← Back to KART38 Toolbox</a>
+<nav class="kart38-nav" aria-label="KART38 navigation"><a class="kart38-brand" href="https://kart38.github.io/">KART<span>38</span></a><a class="kart38-back" href="https://kart38.github.io/">← Project Garage</a></nav><div class="wrap">
+  
   <h1>Backlog Ledger</h1>
   <p class="sub">Your game completion tracker — data saved to this browser</p>
 
