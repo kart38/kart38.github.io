@@ -5,7 +5,7 @@ const API = "https://api.github.com";
 const STATUSES = new Set(["Unmarked","Want to play","Playing","Finished","Not interested"]);
 const enc = new TextEncoder();
 function random() { const a = crypto.getRandomValues(new Uint8Array(32)); return [...a].map(v=>v.toString(16).padStart(2,"0")).join(""); }
-function response(body,status=200,headers={}) { return new Response(typeof body==="string"?body:JSON.stringify(body),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store",...headers}}); }
+function response(body,status=200,headers={}) { return new Response(status===204?null:(typeof body==="string"?body:JSON.stringify(body)),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store",...headers}}); }
 function redirect(url,headers={}) { return new Response(null,{status:302,headers:{Location:url,"cache-control":"no-store",...headers}}); }
 function cors(req,env) { const origin=req.headers.get("Origin"); return origin===new URL(env.SITE_URL).origin?{"Access-Control-Allow-Origin":origin,"Access-Control-Allow-Headers":"Authorization, Content-Type","Access-Control-Allow-Methods":"GET, PUT, OPTIONS","Vary":"Origin"}:{}; }
 async function gh(path,token,options={}) { return fetch(API+path,{...options,headers:{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28","User-Agent":"kart38-game-sync",...(options.headers||{})}}); }
@@ -49,7 +49,7 @@ export default {async fetch(req,env) {
   const user=await gh("/user",result.access_token);if(!user.ok)return response("Cannot verify GitHub user",401);
   const info=await user.json();if(info.login.toLowerCase()!==env.GITHUB_OWNER.toLowerCase())return response("This sync service is restricted to its owner",403);
   // Confirm the user's token can read the designated private repository.
-  try {await getFile(result.access_token,env);}catch{return response("GitHub App needs access to the private tracking repository",403);}
+  const access=await gh("/repos/"+encodeURIComponent(env.GITHUB_OWNER)+"/"+encodeURIComponent(env.GITHUB_REPO),result.access_token);if(!access.ok)return response("GitHub App needs access to the private tracking repository",403);
   const session=random();await env.SESSIONS.put("session:"+session,JSON.stringify({token:result.access_token,login:info.login}),{expirationTtl:86400*14});
   const dest=new URL(env.SITE_URL);dest.hash="sync_token="+session;return redirect(dest.toString());
  }
