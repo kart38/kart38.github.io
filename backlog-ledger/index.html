@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Backlog Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#241934; --bg2:#2f2044; --panel:#2b1e3f;
+  --gold:#E8A33D; --gold-dim:#c98a2c;
+  --ink:#F1E9F9; --ink-dim:#b6a6cf;
+  --line:#4a3768;
+  --green:#7fae5c; --red:#c9635a;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F4EFE6; --bg2:#ffffff; --panel:#ffffff;
+    --gold:#c98a2c; --gold-dim:#a8721f;
+    --ink:#241934; --ink-dim:#5c4d73;
+    --line:#ddd0e8;
+  }
+}
+:root[data-theme="dark"]{ --bg:#241934; --bg2:#2f2044; --panel:#2b1e3f; --ink:#F1E9F9; --ink-dim:#b6a6cf; --line:#4a3768; }
+*{box-sizing:border-box}
+html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Space Mono',monospace;
+  min-height:100%;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 60px;}
+h1{
+  font-family:'Fraunces',serif; font-weight:700; font-size:clamp(28px,5vw,42px);
+  margin:0 0 4px; letter-spacing:-0.01em;
+}
+.sub{color:var(--ink-dim); margin:0 0 28px; font-size:14px;}
+.stats{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:28px;
+  border-radius:4px; overflow:hidden;
+}
+.stat{background:var(--panel); padding:14px 16px;}
+.stat .n{font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--gold); line-height:1.1;}
+.stat .l{font-size:11px; color:var(--ink-dim); margin-top:4px;}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:20px; margin-bottom:20px;}
+.panel h2{font-family:'Fraunces',serif; font-size:18px; margin:0 0 4px; font-weight:700;}
+.panel .hint{color:var(--ink-dim); font-size:12px; margin:0 0 14px;}
+form{display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr auto; gap:8px; align-items:end;}
+.field{display:flex; flex-direction:column; gap:4px; min-width:0;}
+.field label{font-size:10px; color:var(--ink-dim);}
+input,select{
+  background:var(--bg); border:1px solid var(--line); color:var(--ink);
+  padding:8px; border-radius:4px; font-family:inherit; font-size:13px; width:100%;
+}
+input:focus,select:focus{outline:2px solid var(--gold); outline-offset:1px;}
+button{
+  background:var(--gold); color:#241934; border:none; padding:9px 16px;
+  border-radius:4px; font-family:'Space Mono',monospace; font-weight:700; font-size:13px;
+  cursor:pointer; white-space:nowrap;
+}
+button:hover{background:var(--gold-dim);}
+button.ghost{background:transparent; border:1px solid var(--line); color:var(--ink-dim); padding:5px 10px; font-weight:400; font-size:12px;}
+button.ghost:hover{color:var(--red); border-color:var(--red);}
+button.subtle{background:transparent; border:1px solid var(--line); color:var(--ink); padding:5px 10px; font-weight:400; font-size:12px;}
+button.subtle:hover{border-color:var(--gold); color:var(--gold);}
+button.small{padding:5px 10px; font-size:12px;}
+.tablewrap{overflow-x:auto;}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:720px;}
+th{text-align:left; color:var(--ink-dim); font-weight:400; font-size:11px; padding:8px 10px; border-bottom:1px solid var(--line);}
+td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr.editing td{background:rgba(232,163,61,.06); padding:6px 8px;}
+tr.editing input, tr.editing select{padding:6px; font-size:12px;}
+.actions-cell{display:flex; gap:6px; justify-content:flex-end; white-space:nowrap;}
+.status{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px;}
+.s-complete{background:rgba(127,174,92,.2); color:var(--green);}
+.s-complete100{background:rgba(127,174,92,.35); color:var(--green);}
+.s-progress{background:rgba(232,163,61,.2); color:var(--gold);}
+.s-started{background:rgba(232,163,61,.12); color:var(--gold-dim);}
+.s-suspended{background:rgba(182,166,207,.2); color:var(--ink-dim);}
+.s-dropped{background:rgba(201,99,90,.2); color:var(--red);}
+.empty{color:var(--ink-dim); font-size:13px; padding:20px 0; text-align:center;}
+.notes-cell{max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-dim);}
+.chiplist{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+.chip{
+  display:flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--line);
+  border-radius:20px; padding:4px 6px 4px 12px; font-size:12px;
+}
+.chip button{
+  background:none; border:none; color:var(--ink-dim); cursor:pointer; padding:2px 6px;
+  font-size:13px; line-height:1; border-radius:50%;
+}
+.chip button:hover{color:var(--red); background:rgba(201,99,90,.15);}
+.addrow{display:flex; gap:8px;}
+.addrow input{flex:1;}
+.listcols{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+.listcols h3{font-size:12px; text-transform:none; color:var(--ink-dim); margin:0 0 8px; font-weight:400;}
+@media (max-width:800px){
+  form{grid-template-columns:1fr 1fr;}
+  form .field:nth-child(7){grid-column:span 2;}
+  .listcols{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" style="display:inline-block;margin-bottom:18px;color:var(--gold);text-decoration:none;font-size:12px">← Back to KART38 Toolbox</a>
+  <h1>Backlog Ledger</h1>
+  <p class="sub">Your game completion tracker — data saved to this browser</p>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="panel">
+    <h2>Log a game</h2>
+    <form id="form">
+      <div class="field"><label>Game</label><input id="f-game" required placeholder="Title"></div>
+      <div class="field"><label>Platform</label>
+        <select id="f-platform"></select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="f-status"></select>
+      </div>
+      <div class="field"><label>Hours</label><input id="f-hours" type="number" step="0.1" min="0" value="0"></div>
+      <div class="field"><label>Device</label>
+        <select id="f-device"></select>
+      </div>
+      <div class="field"><label>Rating</label>
+        <select id="f-rating"></select>
+      </div>
+      <div class="field"><label>&nbsp;</label><button type="submit">Add</button></div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Library</h2>
+    <p class="hint">Hit Edit on any entry to update it.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Game</th><th>Platform</th><th>Status</th><th>Hours</th><th>Device</th><th>Rating</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty" style="display:none;">No games logged yet — add your first one above.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Platforms &amp; devices</h2>
+    <p class="hint">Add or remove options from the dropdowns above.</p>
+    <div class="listcols">
+      <div>
+        <h3>Platforms</h3>
+        <div class="chiplist" id="platform-chips"></div>
+        <div class="addrow">
+          <input id="new-platform" placeholder="Add a platform">
+          <button type="button" id="add-platform">Add</button>
+        </div>
+      </div>
+      <div>
+        <h3>Devices</h3>
+        <div class="chiplist" id="device-chips"></div>
+        <div class="addrow">
+          <input id="new-device" placeholder="Add a device">
+          <button type="button" id="add-device">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLATFORMS_DEFAULT = ["PC","Android","DS","3DS","GBA","N64","GameCube","Wii","Switch","PSP","Vita","PSX","PS2","PS3","Dreamcast","GBC","PS5"];
+const DEVICES_DEFAULT = ["Desktop PC","Steam Deck","Switch","PS5","3DS","FPGBC","Brick","MacBook Pro","Pixel 6"];
+const STATUSES = ["Just Started","In progress","Complete","Complete (100%)","Suspended","Dropped"];
+const STATUS_CLASS = {"Just Started":"s-started","In progress":"s-progress","Complete":"s-complete","Complete (100%)":"s-complete100","Suspended":"s-suspended","Dropped":"s-dropped"};
+
+const SEED = [
+  {game:"Pokemon Yellow Legacy", platform:"GBC", status:"Complete", hours:75.7, device:"FPGBC", rating:5, notes:""},
+  {game:"Metroid Fusion", platform:"GBA", status:"In progress", hours:5, device:"3DS", rating:4, notes:"SBC GOTM Jan"},
+  {game:"Metal Gear Solid", platform:"PSX", status:"In progress", hours:4, device:"Steam Deck", rating:0, notes:"SBC GOTM Feb"},
+  {game:"Death Stranding", platform:"PS5", status:"In progress", hours:2, device:"PS5", rating:4, notes:""},
+  {game:"Immortal Fenyx Rising", platform:"PC", status:"Just Started", hours:1, device:"Desktop PC", rating:0, notes:""}
+];
+
+let games = [];
+let platforms = [];
+let devices = [];
+let editingIndex = -1;
+
+try{
+  const saved = localStorage.getItem('backlog-ledger');
+  games = saved ? JSON.parse(saved) : SEED.slice();
+}catch(e){ games = SEED.slice(); }
+try{
+  const p = localStorage.getItem('backlog-platforms');
+  platforms = p ? JSON.parse(p) : PLATFORMS_DEFAULT.slice();
+}catch(e){ platforms = PLATFORMS_DEFAULT.slice(); }
+try{
+  const d = localStorage.getItem('backlog-devices');
+  devices = d ? JSON.parse(d) : DEVICES_DEFAULT.slice();
+}catch(e){ devices = DEVICES_DEFAULT.slice(); }
+
+function save(){ try{ localStorage.setItem('backlog-ledger', JSON.stringify(games)); }catch(e){} }
+function savePlatforms(){ try{ localStorage.setItem('backlog-platforms', JSON.stringify(platforms)); }catch(e){} }
+function saveDevices(){ try{ localStorage.setItem('backlog-devices', JSON.stringify(devices)); }catch(e){} }
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// options for a select, guaranteeing the current value is present even if it was since removed from the list
+function optionsHtml(list, current){
+  let opts = list.slice();
+  if(current!==undefined && current!==null && current!=='' && !opts.includes(current)) opts.push(current);
+  return opts.map(o=>`<option value="${escapeHtml(o)}" ${o===current?'selected':''}>${escapeHtml(o)}</option>`).join('');
+}
+
+function fillSelect(id, opts){
+  document.getElementById(id).innerHTML = opts.map(o=>`<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
+}
+function fillFormSelects(){
+  fillSelect('f-platform', platforms);
+  fillSelect('f-status', STATUSES);
+  fillSelect('f-device', devices);
+  fillSelect('f-rating', [0,1,2,3,4,5]);
+}
+
+function avgWhere(pred, key){
+  const rows = games.filter(pred);
+  if(!rows.length) return 0;
+  return rows.reduce((s,g)=>s+Number(g[key]||0),0)/rows.length;
+}
+function mostCommon(key){
+  const counts = {};
+  games.forEach(g=>{ if(g[key]) counts[g[key]] = (counts[g[key]]||0)+1; });
+  let best='—', bestN=0;
+  Object.entries(counts).forEach(([k,n])=>{ if(n>bestN){best=k; bestN=n;} });
+  return games.length ? best : '—';
+}
+
+function renderStats(){
+  const totalHours = games.reduce((s,g)=>s+Number(g.hours||0),0);
+  const completed = games.filter(g=>g.status.startsWith('Complete')).length;
+  const fully = games.filter(g=>g.status==='Complete (100%)').length;
+  const inProgress = games.filter(g=>g.status==='In progress').length;
+  const onHold = games.filter(g=>g.status==='Suspended').length;
+  const dropped = games.filter(g=>g.status==='Dropped').length;
+  const avgCompleted = avgWhere(g=>g.status.startsWith('Complete'),'hours');
+  const avgFully = avgWhere(g=>g.status==='Complete (100%)','hours');
+  const avgDropped = avgWhere(g=>g.status==='Dropped','hours');
+  const avgRatingCompleted = Math.floor(avgWhere(g=>g.status.startsWith('Complete'),'rating'));
+  const avgRatingDropped = Math.floor(avgWhere(g=>g.status==='Dropped','rating'));
+
+  const stats = [
+    ['Estimated hours played', totalHours.toFixed(1)],
+    ['Avg hrs / completed game', avgCompleted.toFixed(1)],
+    ['Avg hrs / 100% game', avgFully.toFixed(1)],
+    ['Avg hrs / dropped game', avgDropped.toFixed(1)],
+    ['Completed', completed],
+    ['Fully completed', fully],
+    ['In progress', inProgress],
+    ['On hold', onHold],
+    ['Dropped', dropped],
+    ['Most played platform', mostCommon('platform')],
+    ['Most played device', mostCommon('device')],
+    ['Avg rating (completed)', games.some(g=>g.status.startsWith('Complete')) ? avgRatingCompleted : '—'],
+    ['Avg rating (dropped)', games.some(g=>g.status==='Dropped') ? avgRatingDropped : '—'],
+  ];
+  document.getElementById('stats').innerHTML = stats.map(([l,n])=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+}
+
+function displayRow(g, i){
+  return `
+    <tr data-i="${i}">
+      <td>${escapeHtml(g.game)}</td>
+      <td>${escapeHtml(g.platform)}</td>
+      <td><span class="status ${STATUS_CLASS[g.status]||''}">${escapeHtml(g.status)}</span></td>
+      <td>${Number(g.hours||0)}</td>
+      <td>${escapeHtml(g.device)}</td>
+      <td>${'★'.repeat(g.rating||0)}${'☆'.repeat(5-(g.rating||0))}</td>
+      <td class="notes-cell" title="${escapeHtml(g.notes||'')}">${escapeHtml(g.notes||'') || '—'}</td>
+      <td class="actions-cell">
+        <button type="button" class="subtle small" data-edit="${i}">Edit</button>
+        <button type="button" class="ghost" data-remove="${i}">Remove</button>
+      </td>
+    </tr>`;
+}
+
+function editRow(g, i){
+  return `
+    <tr data-i="${i}" class="editing">
+      <td><input data-field="game" value="${escapeHtml(g.game)}"></td>
+      <td><select data-field="platform">${optionsHtml(platforms, g.platform)}</select></td>
+      <td><select data-field="status">${optionsHtml(STATUSES, g.status)}</select></td>
+      <td><input data-field="hours" type="number" step="0.1" min="0" value="${Number(g.hours||0)}" style="width:64px;"></td>
+      <td><select data-field="device">${optionsHtml(devices, g.device)}</select></td>
+      <td><select data-field="rating">${optionsHtml(['0','1','2','3','4','5'], String(g.rating||0))}</select></td>
+      <td><input data-field="notes" value="${escapeHtml(g.notes||'')}" placeholder="—"></td>
+      <td class="actions-cell">
+        <button type="button" class="small" data-save="${i}">Save</button>
+        <button type="button" class="subtle small" data-cancel="${i}">Cancel</button>
+      </td>
+    </tr>`;
+}
+
+function renderRows(){
+  const rowsEl = document.getElementById('rows');
+  document.getElementById('empty').style.display = games.length ? 'none' : 'block';
+  rowsEl.innerHTML = games.map((g,i)=> i===editingIndex ? editRow(g,i) : displayRow(g,i)).join('');
+
+  rowsEl.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ editingIndex = Number(btn.dataset.edit); renderRows(); });
+  });
+  rowsEl.querySelectorAll('[data-cancel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ editingIndex = -1; renderRows(); });
+  });
+  rowsEl.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      games.splice(Number(btn.dataset.remove),1);
+      editingIndex = -1;
+      save(); renderRows(); renderStats();
+    });
+  });
+  rowsEl.querySelectorAll('[data-save]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = Number(btn.dataset.save);
+      const tr = btn.closest('tr');
+      const updated = {...games[i]};
+      tr.querySelectorAll('[data-field]').forEach(el=>{
+        const field = el.dataset.field;
+        let val = el.value;
+        if(field==='hours') val = parseFloat(val)||0;
+        if(field==='rating') val = parseInt(val)||0;
+        updated[field] = val;
+      });
+      games[i] = updated;
+      editingIndex = -1;
+      save(); renderRows(); renderStats();
+    });
+  });
+}
+
+function renderChips(){
+  document.getElementById('platform-chips').innerHTML = platforms.map(p=>
+    `<div class="chip">${escapeHtml(p)}<button type="button" data-rm-platform="${escapeHtml(p)}" title="Remove">×</button></div>`
+  ).join('');
+  document.getElementById('device-chips').innerHTML = devices.map(d=>
+    `<div class="chip">${escapeHtml(d)}<button type="button" data-rm-device="${escapeHtml(d)}" title="Remove">×</button></div>`
+  ).join('');
+
+  document.querySelectorAll('[data-rm-platform]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      platforms = platforms.filter(p=>p!==btn.dataset.rmPlatform);
+      savePlatforms(); fillFormSelects(); renderChips(); renderRows();
+    });
+  });
+  document.querySelectorAll('[data-rm-device]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      devices = devices.filter(d=>d!==btn.dataset.rmDevice);
+      saveDevices(); fillFormSelects(); renderChips(); renderRows();
+    });
+  });
+}
+
+document.getElementById('add-platform').addEventListener('click', ()=>{
+  const inp = document.getElementById('new-platform');
+  const val = inp.value.trim();
+  if(val && !platforms.includes(val)){
+    platforms.push(val); savePlatforms(); fillFormSelects(); renderChips();
+  }
+  inp.value = '';
+});
+document.getElementById('add-device').addEventListener('click', ()=>{
+  const inp = document.getElementById('new-device');
+  const val = inp.value.trim();
+  if(val && !devices.includes(val)){
+    devices.push(val); saveDevices(); fillFormSelects(); renderChips();
+  }
+  inp.value = '';
+});
+document.getElementById('new-platform').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('add-platform').click(); } });
+document.getElementById('new-device').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('add-device').click(); } });
+
+document.getElementById('form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const game = document.getElementById('f-game').value.trim();
+  if(!game) return;
+  games.push({
+    game,
+    platform: document.getElementById('f-platform').value,
+    status: document.getElementById('f-status').value,
+    hours: parseFloat(document.getElementById('f-hours').value)||0,
+    device: document.getElementById('f-device').value,
+    rating: parseInt(document.getElementById('f-rating').value)||0,
+    notes: ''
+  });
+  save(); renderRows(); renderStats();
+  e.target.reset();
+  document.getElementById('f-hours').value = 0;
+});
+
+fillFormSelects();
+renderChips();
+renderRows();
+renderStats();
+</script>
+</body>
+</html>
